@@ -110,7 +110,7 @@ sync_engine_env(){
     echo "RATE_LIMIT_ENABLED=0"; echo "DIRECT_FIRST=1"
     [ -n "$proxies" ] && echo "$proxies"
   } > "$OS_DIR/.env"
-  chmod 600 "$OS_DIR/.env"
+  chmod 644 "$OS_DIR/.env"   # container runs as a non-root user and must read it
 }
 
 write_override(){
@@ -317,6 +317,7 @@ def proxies(keep=15):
     lines = [l for l in open(envf).read().splitlines() if not l.startswith("STATIC_PROXY_URLS=")]
     new = "STATIC_PROXY_URLS=" + ",".join(p for p, _ in good)
     open(envf, "w").write("\n".join(lines + [new]) + "\n")
+    os.chmod(envf, 0o644)
     if not load(STATE, {}).get("current"):
         subprocess.run(["docker", "compose", "up", "-d", "backend"], cwd=os.path.join(BASE, "openshorts"), capture_output=True)
         log("engine reloaded with fresh proxies")
