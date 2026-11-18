@@ -13,7 +13,7 @@
 #  Run inside Ubuntu (WSL2 on Windows, or native Linux):
 #     curl -fsSLo gta6.sh https://raw.githubusercontent.com/cassh100k/gta6-clipper/main/gta6.sh && bash gta6.sh install
 #  Then:  ~/gta6-clipper/gta6.sh start | stop | status | once | submit <url> | logs
-#         ~/gta6-clipper/gta6.sh proxies | config | channels | update | help
+#         ~/gta6-clipper/gta6.sh proxies | config | channels | update | worker | help
 # =====================================================================================
 set -euo pipefail
 BASE="${GTA6_HOME:-$HOME/gta6-clipper}"
@@ -504,6 +504,10 @@ case "${1:-help}" in
   stop) cmd_stop "${2:-}";;
   restart) cmd_stop; cmd_start;;
   status) cmd_status;;
+  worker) cmd_stop; dc up -d >/dev/null && info "WORKER MODE: engine up on 127.0.0.1:8000, local autopilot OFF (your VPS drives the jobs)"
+          info "Expose it ONLY to your tailnet. Windows PowerShell:  tailscale serve --bg --tcp 8000 tcp://127.0.0.1:8000"
+          info "Linux/WSL with tailscale:  sudo tailscale serve --bg --tcp 8000 tcp://127.0.0.1:8000"
+          info "Then on the VPS:  curl http://<this-pc-tailscale-name>:8000/health/ready";;
   once) (cd "$BASE" && python3 autopilot.py step);;
   dry) (cd "$BASE" && python3 autopilot.py dry);;
   submit) [ -n "${2:-}" ] || die "usage: submit <youtube-url>"; (cd "$BASE" && python3 autopilot.py submit "$2");;

@@ -25,6 +25,7 @@ One script. One install command. After that it runs by itself.
 10. [Troubleshooting](#10-troubleshooting)
 11. [FAQ](#11-faq)
 12. [Disclaimer](#12-disclaimer)
+13. [Use your PC as a GPU worker for a VPS](#13-use-your-pc-as-a-gpu-worker-for-a-vps-optional)
 
 ---
 
@@ -164,6 +165,7 @@ Shortcut (optional): `echo 'alias gta6=~/gta6-clipper/gta6.sh' >> ~/.bashrc && s
 | `gta6 channels remove <UC id>` | Stop watching a channel |
 | `gta6 proxies` | Refresh the backup proxy list now |
 | `gta6 update` | Update the engine to the latest version |
+| `gta6 worker` | Engine only, no autopilot (when a VPS drives your GPU, see section 13) |
 
 **Finding a channel id (UC...):** open the channel on YouTube, View Page Source, search `"externalId"` or `channel_id=`.
 
@@ -265,6 +267,44 @@ Still stuck? Open Gemini CLI in `~/gta6-clipper` and say "the clipper is broken,
 **Can I run it on a server instead of my PC?** Yes, any Linux box with Docker. Without a GPU it switches to CPU mode automatically.
 
 ---
+
+## 13. Use your PC as a GPU worker for a VPS (optional)
+
+Want an always-on server to be the brain, but your home GPU to do the heavy clipping? Link them with **Tailscale** (free private network, no port forwarding, nothing exposed to the internet).
+
+```
+VPS (always on)                         Your PC (RTX 3060)
+picks GTA 6 videos  --- Tailscale --->  OpenShorts engine clips them
+schedules posts     <-- results -----   (home IP = fewer YouTube blocks)
+```
+
+**On the PC**
+1. Install the clipper normally (sections 2 to 4).
+2. Install Tailscale for Windows: https://tailscale.com/download/windows and sign in.
+3. Run the engine in worker mode (Ubuntu app):
+   ```bash
+   ~/gta6-clipper/gta6.sh worker
+   ```
+4. Share the engine with your tailnet only (PowerShell):
+   ```powershell
+   tailscale serve --bg --tcp 8000 tcp://127.0.0.1:8000
+   ```
+5. Note the PC name shown in the Tailscale app (for example `gaming-pc`).
+
+**On the VPS**
+1. Install Tailscale and join the **same** account:
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up --hostname=vps-clipper --accept-dns=false
+   ```
+   Open the login link it prints and approve.
+2. Test the link:
+   ```bash
+   curl http://gaming-pc:8000/health/ready
+   ```
+3. Point the VPS autopilot at the PC first, with its own engine as fallback. With this repo's script on the VPS, use `gta6.sh submit`/`once` against the PC by setting `API` in `autopilot.py` to `http://gaming-pc:8000`.
+
+When the PC is off, jobs wait or fall back to the VPS engine. Do **not** run `gta6.sh start` on the PC in worker mode, or both machines will pick and post videos.
 
 ## 12. Disclaimer
 
